@@ -1490,9 +1490,8 @@ public class Nidsiosp extends AbstractIOServiceProvider {
    */
   public byte[] readCompData(long hoff, long doff) throws IOException {
     int numin; /* # input bytes processed */
-    long pos = 0;
     long len = raf.length();
-    raf.seek(pos);
+    raf.seek(0);
     numin = (int) (len - hoff);
     // Read in the contents of the NEXRAD Level III product header
 
@@ -1506,53 +1505,55 @@ public class Nidsiosp extends AbstractIOServiceProvider {
     // System.arraycopy( b, (int)hoff, comp, 0, numin -4 );
 
     // decompress the bytes
-    Inflater inf = new Inflater(false);
-
     int resultLength;
     int result = 0;
-    // byte[] inflateData = null;
-    byte[] tmp;
-    int uncompLen = 24500; /* length of decompress space */
-    byte[] uncomp = new byte[uncompLen];
+    byte[] chunk;
+    List<byte[]> chunks = new ArrayList<>(1);
+    List<Integer> sizes = new ArrayList<>(1);
 
+    Inflater inf = new Inflater(false);
     inf.setInput(b, (int) hoff, numin - 4);
-    int limit = 20000;
 
     while (inf.getRemaining() > 0) {
       try {
-        resultLength = inf.inflate(uncomp, result, 4000);
+        chunk = new byte[4000];
+        resultLength = inf.inflate(chunk, 0, 4000);
+        chunks.add(chunk);
+        sizes.add(resultLength);
       } catch (DataFormatException ex) {
         logger.error("ERROR on inflation ", ex);
         throw new IOException(ex.getMessage());
       }
 
-      result = result + resultLength;
-      if (result > limit) {
-        // when uncomp data larger then limit, the uncomp need to increase size
-        tmp = new byte[result];
-        System.arraycopy(uncomp, 0, tmp, 0, result);
-        uncompLen = uncompLen + 10000;
-        uncomp = new byte[uncompLen];
-        System.arraycopy(tmp, 0, uncomp, 0, result);
-      }
+      result += resultLength;
       if (resultLength == 0) {
         int tt = inf.getRemaining();
         byte[] b2 = new byte[2];
         System.arraycopy(b, (int) hoff + numin - 4 - tt, b2, 0, 2);
-        if (headerParser.isZlibHed(b2) == 0) {
-          System.arraycopy(b, (int) hoff + numin - 4 - tt, uncomp, result, tt);
-          result = result + tt;
+        if (!headerParser.isZlibHed(b2)) {
+          chunk = new byte[tt];
+          System.arraycopy(b, (int) hoff + numin - 4 - tt, chunk, 0, tt);
+          chunks.add(chunk);
+          sizes.add(tt);
+          result += tt;
           break;
+        } else {
+          inf.reset();
+          inf.setInput(b, (int) hoff + numin - 4 - tt, tt);
         }
-        inf.reset();
-        inf.setInput(b, (int) hoff + numin - 4 - tt, tt);
       }
-
     }
     inf.end();
 
-    int off;
-    off = 2 * (((uncomp[0] & 0x3F) << 8) | (uncomp[1] & 0xFF));
+    // Combine the chunks into one buffer
+    byte[] uncomp = new byte[result];
+    int pos = 0;
+    for (int i = 0; i < chunks.size(); ++i) {
+      System.arraycopy(chunks.get(i), 0, uncomp, pos, sizes.get(i));
+      pos += sizes.get(i);
+    }
+
+    int off = 2 * (((uncomp[0] & 0x3F) << 8) | (uncomp[1] & 0xFF));
     /* eat WMO and PIL */
     for (int i = 0; i < 2; i++) {
       while ((off < result) && (uncomp[off] != '\n'))

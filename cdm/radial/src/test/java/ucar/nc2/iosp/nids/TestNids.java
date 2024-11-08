@@ -40,6 +40,7 @@ public class TestNids {
   private static String digitPrecipArrayFile = TestDir.localTestDataDir + "nids/DPA_20041123_1709";
   private static String vertIntegLiquidFile = TestDir.localTestDataDir + "nids/NVL_20041130_1946";
   private static String vadWindProfileFile = TestDir.localTestDataDir + "nids/NVW_20041117_1657";
+  private static String compressedBlockFile = TestDir.localTestDataDir + "nids/Level3_CYS_N0B_20241108_1948.nids";
 
   @Test
   public void testNidsReadRadial() throws IOException {
@@ -502,6 +503,21 @@ public class TestNids {
       assertThat(minMax.max).isWithin(1000).of(300000);
     }
   }
+
+  @Test
+  public void testNidsCompressedBlock() throws IOException {
+    NetcdfFile ncfile = null;
+    try {
+      System.out.println("**** Open " + compressedBlockFile);
+      ncfile = NetcdfFile.open(compressedBlockFile);
+    } catch (java.io.IOException e) {
+      System.out.println(" fail = " + e);
+      e.printStackTrace();
+      assert (false);
+    }
+    ncfile.close();
+  }
+
 
   private void testReadData(Variable v) {
     Array a = null;
