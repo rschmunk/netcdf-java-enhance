@@ -255,7 +255,6 @@ class Nidsheader {
     int rc; /* function return status */
     int hoff = 0;
     int type;
-    int zlibed;
     boolean isZ = false;
     int encrypt;
     long actualSize;
@@ -295,8 +294,8 @@ class Nidsheader {
       // byte[] b4 = new byte[4];
       System.arraycopy(b, hoff, b2, 0, 2);
 
-      zlibed = isZlibHed(b2);
-      if (zlibed == 0) {
+      boolean zlibed = isZlibHed(b2);
+      if (!zlibed) {
         encrypt = IsEncrypt(b2);
         if (encrypt == 1) {
           log.error("error reading encryted product " + raf.getLocation());
@@ -331,7 +330,7 @@ class Nidsheader {
           break;
       }
 
-      if (zlibed == 1) {
+      if (zlibed) {
         isZ = true;
         uncompdata = GetZlibedNexr(b, readLen, hoff);
         // uncompdata = Nidsiosp.readCompData(hoff, 160) ;
@@ -3282,23 +3281,23 @@ class Nidsheader {
 
   /**
    * Name: IsZlibed
-   *
+   * <p>
    * Purpose: Check a two-byte sequence to see if it indicates the start of a zlib-compressed
    * buffer
    */
-  int isZlibHed(byte[] buf) {
+  boolean isZlibHed(byte[] buf) {
     short b0 = convertunsignedByte2Short(buf[0]);
     short b1 = convertunsignedByte2Short(buf[1]);
 
     if ((b0 & 0xf) == Z_DEFLATED) {
       if ((b0 >> 4) + 8 <= DEF_WBITS) {
         if ((((b0 << 8) + b1) % 31) == 0) {
-          return 1;
+          return true;
         }
       }
     }
 
-    return 0;
+    return false;
 
   }
 
@@ -3363,56 +3362,52 @@ class Nidsheader {
     // decompress the bytes
     int resultLength;
     int result = 0;
-    // byte[] inflateData = null;
-    byte[] tmp;
-    int uncompLen = 24500; /* length of decompress space */
-    byte[] uncomp = new byte[uncompLen];
-    Inflater inflater = new Inflater(false);
+    byte[] chunk;
+    List<byte[]> chunks = new ArrayList<>(1);
+    List<Integer> sizes = new ArrayList<>(1);
 
-    inflater.setInput(buf, hoff, numin - 4);
-    int offset = 0;
-    int limit = 20000;
+    Inflater inf = new Inflater(false);
+    inf.setInput(buf, hoff, numin - 4);
 
-    while (inflater.getRemaining() > 0) {
+    while (inf.getRemaining() > 0) {
       try {
-        resultLength = inflater.inflate(uncomp, offset, 4000);
+        chunk = new byte[4000];
+        resultLength = inf.inflate(chunk, 0, 4000);
+        chunks.add(chunk);
+        sizes.add(resultLength);
       } catch (DataFormatException ex) {
-        log.error("nids Inflater", ex);
-        throw new IOException(ex.getMessage(), ex);
+        log.error("ERROR on inflation ", ex);
+        throw new IOException(ex.getMessage());
       }
-      offset = offset + resultLength;
-      result = result + resultLength;
-      if (result > limit) {
-        // when uncomp data larger then limit, the uncomp need to increase size
-        tmp = new byte[result];
-        System.arraycopy(uncomp, 0, tmp, 0, result);
-        uncompLen = uncompLen + 10000;
-        uncomp = new byte[uncompLen];
-        System.arraycopy(tmp, 0, uncomp, 0, result);
-      }
+
+      result += resultLength;
       if (resultLength == 0) {
-        int tt = inflater.getRemaining();
+        int tt = inf.getRemaining();
         byte[] b2 = new byte[2];
         System.arraycopy(buf, hoff + numin - 4 - tt, b2, 0, 2);
-        if (result + tt > uncompLen) {
-          tmp = new byte[result];
-          System.arraycopy(uncomp, 0, tmp, 0, result);
-          uncompLen = uncompLen + 10000;
-          uncomp = new byte[uncompLen];
-          System.arraycopy(tmp, 0, uncomp, 0, result);
-        }
-        if (isZlibHed(b2) == 0) {
-          System.arraycopy(buf, hoff + numin - 4 - tt, uncomp, result, tt);
-          result = result + tt;
+        if (!isZlibHed(b2)) {
+          chunk = new byte[tt];
+          System.arraycopy(buf, hoff + numin - 4 - tt, chunk, 0, tt);
+          chunks.add(chunk);
+          sizes.add(tt);
+          result += tt;
           break;
+        } else {
+          inf.reset();
+          inf.setInput(buf, hoff + numin - 4 - tt, tt);
         }
-        inflater.reset();
-        inflater.setInput(buf, hoff + numin - 4 - tt, tt);
       }
+    }
+    inf.end();
 
+    // Combine the chunks into one buffer
+    byte[] uncomp = new byte[result];
+    int pos = 0;
+    for (int i = 0; i < chunks.size(); ++i) {
+      System.arraycopy(chunks.get(i), 0, uncomp, pos, sizes.get(i));
+      pos += sizes.get(i);
     }
 
-    inflater.end();
     /*
      ** Find out how long CCB is. This is done by using the lower order
      ** 6 bits from the first uncompressed byte and all 8 bits of the
