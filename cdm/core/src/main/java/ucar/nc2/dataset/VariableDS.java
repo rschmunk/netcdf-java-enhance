@@ -34,6 +34,8 @@ import java.util.*;
  */
 public class VariableDS extends Variable implements VariableEnhanced, EnhanceScaleMissingUnsigned {
 
+  private static org.slf4j.Logger LOGGER = org.slf4j.LoggerFactory.getLogger(VariableDS.class);
+
   static final ServiceLoader<EnhancementProvider> ENHANCEMENT_PROVIDERS = ServiceLoader.load(EnhancementProvider.class);
 
   /**

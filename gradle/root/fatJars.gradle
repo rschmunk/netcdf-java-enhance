@@ -38,6 +38,8 @@ dependencies {
   ncIdv project(':cdm:cdm-image')
   ncIdv project(':cdm:cdm-radial')
   ncIdv project(':cdm:cdm-misc')
+  ncIdv project(':cdm:cdm-s3')
+  ncIdv project(':cdm:cdm-zarr')
   ncIdv project(':bufr')
   ncIdv project(':grib')
   ncIdv project(':opendap')

@@ -23,6 +23,8 @@ import java.util.Set;
  */
 public class StructureDS extends ucar.nc2.Structure implements VariableEnhanced {
 
+  private static org.slf4j.Logger LOGGER = org.slf4j.LoggerFactory.getLogger(StructureDS.class);
+
   /** @deprecated Use StructureDS.builder() */
   @Deprecated
   protected StructureDS(NetcdfFile ncfile, Group group, String shortName) {
@@ -701,10 +703,13 @@ public class StructureDS extends ucar.nc2.Structure implements VariableEnhanced 
 
     /** Normally this is called by Group.build() */
     public StructureDS build(Group parentGroup) {
-      if (built)
+      if (built) {
         throw new IllegalStateException("already built");
+      }
       built = true;
       this.setDataType(DataType.STRUCTURE);
+
+      LOGGER.trace("StructureDS building {}", orgName);
       return new StructureDS(this, parentGroup);
     }
   }
