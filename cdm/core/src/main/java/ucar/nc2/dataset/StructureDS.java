@@ -23,7 +23,7 @@ import java.util.Set;
  */
 public class StructureDS extends ucar.nc2.Structure implements VariableEnhanced {
 
-  private static org.slf4j.Logger LOGGER = org.slf4j.LoggerFactory.getLogger(StructureDS.class);
+  private static org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(StructureDS.class);
 
   /** @deprecated Use StructureDS.builder() */
   @Deprecated
@@ -572,6 +572,7 @@ public class StructureDS extends ucar.nc2.Structure implements VariableEnhanced 
    */
   @Deprecated
   public void enhance(Set<NetcdfDataset.Enhance> mode) {
+    logger.trace("mode {}", mode);
     for (Variable v : getVariables()) {
       VariableEnhanced ve = (VariableEnhanced) v;
       ve.enhance(mode);
@@ -587,6 +588,7 @@ public class StructureDS extends ucar.nc2.Structure implements VariableEnhanced 
   /** @deprecated Use StructureDS.builder() */
   @Deprecated
   public void addCoordinateSystem(ucar.nc2.dataset.CoordinateSystem p0) {
+    logger.trace("CS {}", p0);
     proxy.addCoordinateSystem(p0);
   }
 
@@ -709,7 +711,7 @@ public class StructureDS extends ucar.nc2.Structure implements VariableEnhanced 
       built = true;
       this.setDataType(DataType.STRUCTURE);
 
-      LOGGER.trace("StructureDS building {}", orgName);
+      logger.trace("StructureDS building {}", orgName);
       return new StructureDS(this, parentGroup);
     }
   }

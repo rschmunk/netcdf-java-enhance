@@ -19,6 +19,9 @@ import java.util.*;
  */
 @Deprecated
 class EnhancementsImpl implements Enhancements {
+
+  private static org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(EnhancementsImpl.class);
+
   private Variable forVar;
   String desc, units;
   private List<CoordinateSystem> coordSys; // dont allocate unless its used
@@ -33,6 +36,7 @@ class EnhancementsImpl implements Enhancements {
    * @param desc set description.
    */
   EnhancementsImpl(Variable forVar, String units, String desc) {
+    logger.trace("1 {}", forVar.getShortName());
     this.forVar = forVar;
     this.units = units;
     this.desc = desc;
@@ -44,6 +48,7 @@ class EnhancementsImpl implements Enhancements {
    * @param forVar the Variable to decorate.
    */
   EnhancementsImpl(Variable forVar) {
+    logger.trace("2 {}", forVar.getShortName());
     this.forVar = forVar;
   }
 
@@ -54,16 +59,20 @@ class EnhancementsImpl implements Enhancements {
    * @return list of type ucar.nc2.dataset.CoordinateSystem; may be empty not null.
    */
   public ImmutableList<CoordinateSystem> getCoordinateSystems() {
+    logger.trace("has CS {}", (coordSys != null));
     return (coordSys == null) ? ImmutableList.of() : ImmutableList.copyOf(coordSys);
   }
 
   /** Add a CoordinateSystem to the dataset. */
   public void addCoordinateSystem(CoordinateSystem cs) {
-    if (cs == null)
+    logger.trace("add CS {}", cs);
+    if (cs == null) {
       throw new RuntimeException("Attempted to add null CoordinateSystem to var " + forVar.getFullName());
+    }
 
-    if (coordSys == null)
+    if (coordSys == null) {
       coordSys = new ArrayList<>(5);
+    }
     coordSys.add(cs);
   }
 
@@ -78,6 +87,7 @@ class EnhancementsImpl implements Enhancements {
    * @param desc description
    */
   public void setDescription(String desc) {
+    logger.trace("set {}", desc);
     this.desc = desc;
   }
 
