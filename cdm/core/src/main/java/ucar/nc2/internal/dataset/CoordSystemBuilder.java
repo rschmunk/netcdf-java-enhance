@@ -240,6 +240,7 @@ public class CoordSystemBuilder {
       if (vb instanceof VariableDS.Builder) {
         varList.add(new VarProcess(group, (VariableDS.Builder) vb));
       } else if (vb instanceof StructureDS.Builder) {
+        log.trace("StructureDS.Builder {}", group);
         addStructure(group, (StructureDS.Builder) vb);
       }
     }
@@ -255,6 +256,7 @@ public class CoordSystemBuilder {
       if (vb instanceof VariableDS.Builder) {
         varList.add(new VarProcess(group, (VariableDS.Builder) vb));
       } else if (vb instanceof StructureDS.Builder) { // LOOK the actual Structure isnt in the VarProcess list.
+        log.trace("StructureDS.Builder {}", vb);
         addStructure(group, (StructureDS.Builder) vb);
       }
     }

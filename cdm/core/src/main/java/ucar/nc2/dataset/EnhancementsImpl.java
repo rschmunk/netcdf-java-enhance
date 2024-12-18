@@ -36,7 +36,9 @@ class EnhancementsImpl implements Enhancements {
    * @param desc set description.
    */
   EnhancementsImpl(Variable forVar, String units, String desc) {
-    logger.trace("1 {}", forVar.getShortName());
+    if (forVar instanceof StructureDS) {
+      logger.trace("{} (1)", forVar.getShortName());
+    }
     this.forVar = forVar;
     this.units = units;
     this.desc = desc;
@@ -48,7 +50,9 @@ class EnhancementsImpl implements Enhancements {
    * @param forVar the Variable to decorate.
    */
   EnhancementsImpl(Variable forVar) {
-    logger.trace("2 {}", forVar.getShortName());
+    if (forVar instanceof StructureDS) {
+      logger.trace("{} (2)", forVar.getShortName());
+    }
     this.forVar = forVar;
   }
 
@@ -59,13 +63,17 @@ class EnhancementsImpl implements Enhancements {
    * @return list of type ucar.nc2.dataset.CoordinateSystem; may be empty not null.
    */
   public ImmutableList<CoordinateSystem> getCoordinateSystems() {
-    logger.trace("has CS {}", (coordSys != null));
+    if (forVar instanceof StructureDS) {
+      logger.trace("{} has CS {}", forVar.getShortName(), (coordSys != null));
+    }
     return (coordSys == null) ? ImmutableList.of() : ImmutableList.copyOf(coordSys);
   }
 
   /** Add a CoordinateSystem to the dataset. */
   public void addCoordinateSystem(CoordinateSystem cs) {
-    logger.trace("add CS {}", cs);
+    if (forVar instanceof StructureDS) {
+      logger.trace("{} add CS {}", forVar.getShortName(), cs);
+    }
     if (cs == null) {
       throw new RuntimeException("Attempted to add null CoordinateSystem to var " + forVar.getFullName());
     }
@@ -77,8 +85,9 @@ class EnhancementsImpl implements Enhancements {
   }
 
   public void removeCoordinateSystem(ucar.nc2.dataset.CoordinateSystem p0) {
-    if (coordSys != null)
+    if (coordSys != null) {
       coordSys.remove(p0);
+    }
   }
 
   /**
@@ -87,7 +96,9 @@ class EnhancementsImpl implements Enhancements {
    * @param desc description
    */
   public void setDescription(String desc) {
-    logger.trace("set {}", desc);
+    if (forVar instanceof StructureDS) {
+      logger.trace("{} setDescription {}", forVar.getShortName(), desc);
+    }
     this.desc = desc;
   }
 
